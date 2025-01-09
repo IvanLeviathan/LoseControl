@@ -6,7 +6,7 @@ local settingspage = require('LoseControl/settings_page')
 local LoseControlAddon = {
     name = "Lose Control",
     author = "Misosoup",
-    version = "0.1",
+    version = "0.2",
     desc = "Tracks CC debuffs on you."
 }
 
