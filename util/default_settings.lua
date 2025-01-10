@@ -10,7 +10,9 @@ local defaultSettings = {
     IconSize = 100,
     LabelX = 0,
     TimerFontSize = 30,
-    IconY = 540
+    IconY = 540,
+    LabelTextColor = {a = 1, r = 1, g = 1, b = 1},
+    TimerTextColor = {a = 1, r = 1, g = 1, b = 1}
 }
 
 return defaultSettings

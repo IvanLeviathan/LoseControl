@@ -6,12 +6,14 @@ local settingspage = require('LoseControl/settings_page')
 local LoseControlAddon = {
     name = "Lose Control",
     author = "Misosoup",
-    version = "0.2",
+    version = "0.3",
     desc = "Tracks CC debuffs on you."
 }
 
 local CANVAS
 local lastUpdate = 0
+local iconCanvas
+local canvasOffset = 30
 
 DEBUFF = {
     path = TEXTURE_PATH.HUD,
@@ -64,30 +66,72 @@ end
 
 -- Function to create buff icon and label
 local function CreateDebuffIcon()
-    local icon = CreateItemIconButton("playerCCIcon", CANVAS)
+
+    iconCanvas = api.Interface:CreateEmptyWindow("playerCCCanvas", CANVAS, 0, 0)
+    iconCanvas:AddAnchor("CENTER", CANVAS, "CENTER", settings.IconX,
+                         settings.IconY)
+    iconCanvas.bg = iconCanvas:CreateNinePartDrawable(TEXTURE_PATH.HUD,
+                                                      "background")
+    iconCanvas.bg:SetTextureInfo("bg_quest")
+    iconCanvas.bg:SetColor(0, 0, 0, 0.5)
+    iconCanvas.bg:AddAnchor("TOPLEFT", iconCanvas, 0, 0)
+    iconCanvas.bg:AddAnchor("BOTTOMRIGHT", iconCanvas, 0, 0)
+    iconCanvas:SetExtent(settings.IconSize + canvasOffset,
+                         settings.IconSize + canvasOffset)
+    iconCanvas:Show(false)
+
+    -- drag events for canvas
+    function iconCanvas:OnDragStart(arg)
+        if (helpers.getSettingsPageOpened()) then
+            iconCanvas:StartMoving()
+            api.Cursor:ClearCursor()
+            api.Cursor:SetCursorImage(CURSOR_PATH.MOVE, 0, 0)
+            return
+        end
+    end
+    function iconCanvas:OnDragStop()
+        iconCanvas:StopMovingOrSizing()
+        local x, y = iconCanvas:GetOffset()
+        api.Cursor:ClearCursor()
+        settingspage.updateIconCoords(x, y, settings.IconSize, canvasOffset)
+    end
+
+    iconCanvas:SetHandler("OnDragStart", iconCanvas.OnDragStart)
+    iconCanvas:SetHandler("OnDragStop", iconCanvas.OnDragStop)
+
+    if iconCanvas.RegisterForDrag ~= nil then
+        iconCanvas:RegisterForDrag("LeftButton")
+    end
+    if iconCanvas.EnableDrag ~= nil then iconCanvas:EnableDrag(true) end
+    -- /drag events for canvas
+
+    local icon = CreateItemIconButton("playerCCIcon", iconCanvas)
     icon:Clickable(false)
     icon:SetExtent(settings.IconSize, settings.IconSize)
-    icon:Show(false)
+    icon:Show(true)
     F_SLOT.ApplySlotSkin(icon, icon.back, DEBUFF)
-    icon:AddAnchor("CENTER", CANVAS, "CENTER", settings.IconX, settings.IconY)
+    icon:AddAnchor("CENTER", iconCanvas, "CENTER", 0, 0)
 
     local label
-    label = CANVAS:CreateChildWidget("label", "playerCCLabel", 0, true)
+    label = icon:CreateChildWidget("label", "playerCCLabel", 0, true)
     label:SetText("")
     label:AddAnchor("CENTER", icon, "CENTER", settings.LabelX, settings.LabelY)
     label.style:SetFontSize(settings.LabelFontSize)
     label.style:SetAlign(ALIGN_CENTER)
     label.style:SetShadow(true)
+    label.style:SetColor(settings.LabelTextColor.r, settings.LabelTextColor.g,
+                         settings.LabelTextColor.b, 1)
     label:Show(false)
 
     local timer
-    timer = CANVAS:CreateChildWidget("label", "playerCCTimer", 0, true)
+    timer = icon:CreateChildWidget("label", "playerCCTimer", 0, true)
     timer:SetText("")
     timer:AddAnchor("CENTER", icon, "CENTER", settings.TimerX, settings.TimerY)
     timer.style:SetFontSize(settings.TimerFontSize)
     timer.style:SetAlign(ALIGN_CENTER)
     timer.style:SetShadow(true)
-    timer.style:SetColor(1, 1, 1, 1)
+    timer.style:SetColor(settings.TimerTextColor.r, settings.TimerTextColor.g,
+                         settings.TimerTextColor.b, 1)
     timer:Show(false)
 
     return icon, label, timer
@@ -106,6 +150,7 @@ local function OnUpdate(dt)
 
     if #debuffs > 0 then
         CANVAS:Show(true)
+        iconCanvas:Show(true)
         for i = 1, #debuffs do
             local info = debuffs[i].info
             local tooltip = debuffs[i].tooltip
@@ -122,6 +167,7 @@ local function OnUpdate(dt)
         end
     else
         CANVAS:Show(false)
+        iconCanvas:Show(false)
     end
 
 end
@@ -130,10 +176,13 @@ local function OnSettingsSaved()
     icon:Show(false)
     label:Show(false)
     timer:Show(false)
+    iconCanvas:Show(false)
     icon = nil
     label = nil
     timer = nil
+    iconCanvas = nil
     settings = helpers.getSettings(CANVAS)
+
     icon, label, timer = CreateDebuffIcon()
 end
 
@@ -161,6 +210,10 @@ local function Unload()
     if CANVAS ~= nil then
         CANVAS:Show(false)
         CANVAS = nil
+    end
+    if iconCanvas ~= nil then
+        iconCanvas:Show(false)
+        iconCanvas = nil
     end
     settingspage.Unload()
 end

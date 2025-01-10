@@ -3,6 +3,7 @@ local ccList = {
     'Poison Stun', 'Deep Freeze', 'Tripped (Strong)', 'Deep Sleep', 'Slow',
     'Freeze Up', "Alliance Soldier's Pull", 'Freeze of Evil Spirit', 'Freeze',
     'Bubble Trap', 'Wave Meteor Strike Hit', "Red Dragon's Wind Gust",
-    "Hell Spear"
+    "Hell Spear", 'Petrified', 'Dazed', 'Splashdown Bubble',
+    'Strong Telekinesis', 'Telekinesis', 'Silence'
 }
 return ccList
