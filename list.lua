@@ -11,6 +11,7 @@ local ccList = {
     "Ecktom's Shackle", 'Ice Shard', 'Bestial Leap', 'Explosive Ice',
     'Dizziness', 'Unconscious', 'Ice Shock', "Alexander's Powerful Freeze",
     "Trap!", 'Ice', 'Lava Trap Explosion', 'Howl of Terror', 'Eternal Silence',
-    'Mana Force', 'Shock', 'Poor Landing', 'Paralyzed', 'Wraith Rooted'
+    'Mana Force', 'Shock', 'Poor Landing', 'Paralyzed', 'Wraith Rooted',
+    "Lost Tribe's Shockwave", 'Control'
 }
 return ccList

@@ -6,7 +6,7 @@ local settingspage = require('LoseControl/settings_page')
 local LoseControlAddon = {
     name = "Lose Control",
     author = "Misosoup",
-    version = "0.3",
+    version = "0.5",
     desc = "Tracks CC debuffs on you."
 }
 
@@ -39,6 +39,36 @@ local function CollectAllDebuffs()
     local debuffs = {}
 
     if (helpers.getSettingsPageOpened()) then
+
+        table.insert(debuffs, {
+            info = {
+                path = 'Game\\ui\\icon\\icon_skill_buff10.dds',
+                timeLeft = 6723
+            },
+            tooltip = {name = "Stun"}
+        })
+        table.insert(debuffs, {
+            info = {
+                path = 'Game\\ui\\icon\\icon_skill_buff124.dds',
+                timeLeft = 8453
+            },
+            tooltip = {name = "Hell Spear"}
+        })
+
+        table.insert(debuffs, {
+            info = {
+                path = 'Game\\ui\\icon\\icon_skill_death10.dds',
+                timeLeft = 3376
+            },
+            tooltip = {name = "Telekinesis"}
+        })
+        table.insert(debuffs, {
+            info = {
+                path = 'Game\\ui\\icon\\icon_skill_buff64.dds',
+                timeLeft = 2353
+            },
+            tooltip = {name = "Deep Freeze"}
+        })
         table.insert(debuffs, {
             info = {
                 path = 'Game\\ui\\icon\\icon_skill_buff01.dds',
@@ -63,6 +93,9 @@ local function CollectAllDebuffs()
 
     return debuffs
 end
+
+local addIconsCount = 4;
+local addIcons = {}
 
 -- Function to create buff icon and label
 local function CreateDebuffIcon()
@@ -112,6 +145,35 @@ local function CreateDebuffIcon()
     F_SLOT.ApplySlotSkin(icon, icon.back, DEBUFF)
     icon:AddAnchor("CENTER", iconCanvas, "CENTER", 0, 0)
 
+    -- additional mini icons
+    for i = 1, addIconsCount do
+        local miniIcon = CreateItemIconButton("playerCCIcon" .. i, iconCanvas)
+        local miniIconSize = settings.IconSize / 2
+        miniIcon:Clickable(false)
+        miniIcon:SetExtent(miniIconSize, miniIconSize)
+        miniIcon:Show(false)
+        F_SLOT.ApplySlotSkin(miniIcon, miniIcon.back, DEBUFF)
+
+        local x = 0 + (i * miniIconSize) - miniIconSize
+        local y = 0 - miniIconSize / 2
+        miniIcon:AddAnchor("CENTER", iconCanvas, "TOPLEFT", x, y)
+
+        miniIcon.timer = miniIcon:CreateChildWidget("label",
+                                                    "playerCCMiniTimer", 0, true)
+        local miniTimerFontSize = settings.TimerFontSize / 1.5
+        miniIcon.timer:SetText("5.7")
+        miniIcon.timer:AddAnchor("CENTER", miniIcon, "TOP", 0, 0)
+        miniIcon.timer.style:SetFontSize(miniTimerFontSize)
+        miniIcon.timer.style:SetAlign(ALIGN_CENTER)
+        miniIcon.timer.style:SetShadow(true)
+        miniIcon.timer.style:SetColor(settings.TimerTextColor.r,
+                                      settings.TimerTextColor.g,
+                                      settings.TimerTextColor.b, 1)
+        miniIcon.timer:Show(false)
+
+        table.insert(addIcons, miniIcon)
+    end
+
     local label
     label = icon:CreateChildWidget("label", "playerCCLabel", 0, true)
     label:SetText("")
@@ -139,6 +201,13 @@ end
 
 local icon, label, timer
 
+local function clearAdditionalIcons(onlyHide)
+    for i = 1, addIconsCount do
+        addIcons[i]:Show(false)
+        if not onlyHide then addIcons[i] = nil end
+    end
+end
+
 local function OnUpdate(dt)
     lastUpdate = lastUpdate + dt
     -- 20 is ok
@@ -147,32 +216,49 @@ local function OnUpdate(dt)
 
     -- Collect all debuffs
     local debuffs = CollectAllDebuffs()
+    -- Reverse table
+
+    debuffs = helpers.reverseTable(debuffs)
 
     if #debuffs > 0 then
         CANVAS:Show(true)
         iconCanvas:Show(true)
+        clearAdditionalIcons(true)
         for i = 1, #debuffs do
-            local info = debuffs[i].info
-            local tooltip = debuffs[i].tooltip
-            F_SLOT.SetIconBackGround(icon, info.path)
-            icon:Show(true)
-            if settings.ShowLabel then
-                label:SetText(tooltip.name)
-                label:Show(true)
-            end
-            if settings.ShowTimer then
-                timer:SetText(string.format("%.1f", (info.timeLeft / 1000)))
-                timer:Show(true)
+            -- last CC is big
+            if i == 1 then
+                local info = debuffs[i].info
+                local tooltip = debuffs[i].tooltip
+                F_SLOT.SetIconBackGround(icon, info.path)
+                icon:Show(true)
+                if settings.ShowLabel then
+                    label:SetText(tooltip.name)
+                    label:Show(true)
+                end
+                if settings.ShowTimer then
+                    timer:SetText(string.format("%.1f", (info.timeLeft / 1000)))
+                    timer:Show(true)
+                end
+            else
+                local info = debuffs[i].info
+                local miniIcon = addIcons[i - 1]
+                F_SLOT.SetIconBackGround(miniIcon, info.path)
+                miniIcon:Show(true)
+                miniIcon.timer:SetText(string.format("%.1f",
+                                                     (info.timeLeft / 1000)))
+                miniIcon.timer:Show(true)
             end
         end
     else
         CANVAS:Show(false)
         iconCanvas:Show(false)
+        clearAdditionalIcons(true)
     end
 
 end
 
 local function OnSettingsSaved()
+    clearAdditionalIcons()
     icon:Show(false)
     label:Show(false)
     timer:Show(false)
