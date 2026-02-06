@@ -15,7 +15,7 @@ local lastUpdate = 0
 local iconCanvas
 local canvasOffset = 30
 
-DEBUFF = {
+local DEBUFF = {
     path = TEXTURE_PATH.HUD,
     coords = {685, 130, 7, 8},
     inset = {3, 3, 3, 3},
@@ -202,9 +202,13 @@ end
 local icon, label, timer
 
 local function clearAdditionalIcons(onlyHide)
-    for i = 1, addIconsCount do
-        addIcons[i]:Show(false)
-        if not onlyHide then addIcons[i] = nil end
+    for i = 1, #addIcons do
+        if addIcons[i] then
+            addIcons[i]:Show(false)
+        end
+    end
+    if not onlyHide then
+        addIcons = {}
     end
 end
 
@@ -242,11 +246,13 @@ local function OnUpdate(dt)
             else
                 local info = debuffs[i].info
                 local miniIcon = addIcons[i - 1]
-                F_SLOT.SetIconBackGround(miniIcon, info.path)
-                miniIcon:Show(true)
-                miniIcon.timer:SetText(string.format("%.1f",
-                                                     (info.timeLeft / 1000)))
-                miniIcon.timer:Show(true)
+                if miniIcon then
+                    F_SLOT.SetIconBackGround(miniIcon, info.path)
+                    miniIcon:Show(true)
+                    miniIcon.timer:SetText(string.format("%.1f",
+                                                         (info.timeLeft / 1000)))
+                    miniIcon.timer:Show(true)
+                end
             end
         end
     else
@@ -259,14 +265,24 @@ end
 
 local function OnSettingsSaved()
     clearAdditionalIcons()
-    icon:Show(false)
-    label:Show(false)
-    timer:Show(false)
-    iconCanvas:Show(false)
-    icon = nil
-    label = nil
-    timer = nil
-    iconCanvas = nil
+    if icon then
+        icon:Show(false)
+        icon = nil
+    end
+    if label then
+        label:Show(false)
+        label = nil
+    end
+    if timer then
+        timer:Show(false)
+        timer = nil
+    end
+    if iconCanvas then
+        iconCanvas:ReleaseHandler("OnDragStart")
+        iconCanvas:ReleaseHandler("OnDragStop")
+        iconCanvas:Show(false)
+        iconCanvas = nil
+    end
     settings = helpers.getSettings(CANVAS)
 
     icon, label, timer = CreateDebuffIcon()
@@ -293,13 +309,31 @@ local function Load()
 end
 
 local function Unload()
-    if CANVAS ~= nil then
-        CANVAS:Show(false)
-        CANVAS = nil
+    api.On("UPDATE", nil)
+
+    clearAdditionalIcons()
+
+    if icon then
+        icon:Show(false)
+        icon = nil
     end
-    if iconCanvas ~= nil then
+    if label then
+        label:Show(false)
+        label = nil
+    end
+    if timer then
+        timer:Show(false)
+        timer = nil
+    end
+    if iconCanvas then
+        iconCanvas:ReleaseHandler("OnDragStart")
+        iconCanvas:ReleaseHandler("OnDragStop")
         iconCanvas:Show(false)
         iconCanvas = nil
+    end
+    if CANVAS then
+        CANVAS:Show(false)
+        CANVAS = nil
     end
     settingspage.Unload()
 end
